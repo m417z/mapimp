@@ -36,38 +36,31 @@ POSSIBILITY OF SUCH DAMAGE BLAH BLAH BLAH
 #ifndef __MAPIMP_H__
 #define __MAPIMP_H__
 
-/* Use this switch if you want to compile for OllyDbg 1.10 */
-//#define OLLYDBG
-/* Use this switch if you want to compile for ImmDbg 1.80 */
-#define IMMDBG
-/* Use this switch if you want to build mask testing application instead */
-//#define MASKTEST
-
 /* use PCRE library */
 #define PCRE_STATIC
-#include "pcre\\pcre.h"
+#include "pcre\\t_pcre.h"
 
 /* and OllyDbg/ImmDbg Plugin SDK to compile */
-#ifdef OLLYDBG
+#if defined(OLLYDBG)
 #include "pdk\\odbg\\plugin.h"
-#else
-#ifdef IMMDBG
+#elif defined(OLLYDBG2)
+#include "pdk\\odbg2\\plugin.h"
+#elif defined(IMMDBG)
 #include "pdk\\idbg\\plugin.h"
-#endif
 #endif
 
 /* Target specific stuff */
-#ifdef OLLYDBG
+#if defined(OLLYDBG)
 #pragma comment(lib, "pdk\\odbg\\ollydbgvc7.lib")
-#else
-#ifdef IMMDBG
+#elif defined(OLLYDBG2)
+#pragma comment(lib, "pdk\\odbg2\\ollydbg.lib")
+#elif defined(IMMDBG)
 #pragma comment(lib, "pdk\\idbg\\immunitydebugger.lib")
-#endif
 #endif
 
 #pragma comment(lib, "comctl32.lib")
-#ifdef _DEBUG
-#pragma comment(lib, "pcre\\pcred.lib")
+#ifdef _UNICODE
+#pragma comment(lib, "pcre\\pcre16.lib")
 #else
 #pragma comment(lib, "pcre\\pcre.lib")
 #endif
@@ -96,17 +89,17 @@ typedef struct
 
 typedef struct
 {
-    LPVOID      next;
-    TCHAR*      buffer;
-    TCHAR*      repl;
-    size_t      repl_s;
-    int         insert;
-    int         type;
-    int         errcode;
-    TCHAR*      errptr;
-    int         erroffset;
-    pcre*       regex;
-    pcre_extra* extra;
+    LPVOID         next;
+    TCHAR*         buffer;
+    TCHAR*         repl;
+    size_t         repl_s;
+    int            insert;
+    int            type;
+    int            errcode;
+    char*          errptr;
+    int            erroffset;
+    _t_pcre*       regex;
+    _t_pcre_extra* extra;
 } mask_t, *pmask_t;
 
 #define OVECTOR_COMP_COUNT 3
@@ -241,23 +234,25 @@ typedef enum
 #endif
 
 /* Configuration file parameters */
-#define CONFIG_STR_COMMENTS      "comments"
-#define CONFIG_STR_LABELS        "labels"
-#define CONFIG_STR_COLLISIONS    "check_collisions"
-#define CONFIG_STR_FILESEG       "read_file_segments"
-#define CONFIG_STR_AUTOIMPORT    "autoimport"
-#define CONFIG_STR_DEMANGLE      "demangle"
-#define CONFIG_STR_USEMASKS      "use_masks"
-#define CONFIG_STR_MASKS         "masks"
+#define CONFIG_STR_COMMENTS      _T("comments")
+#define CONFIG_STR_LABELS        _T("labels")
+#define CONFIG_STR_COLLISIONS    _T("check_collisions")
+#define CONFIG_STR_FILESEG       _T("read_file_segments")
+#define CONFIG_STR_AUTOIMPORT    _T("autoimport")
+#define CONFIG_STR_DEMANGLE      _T("demangle")
+#define CONFIG_STR_USEMASKS      _T("use_masks")
+#define CONFIG_STR_MASKS         _T("masks")
 #define CONFIG_STR_MAXSIZE       sizeof(CONFIG_STR_FILESEG)
 
-#define CONFIG_SEPARATOR_CHARSET " =-\n"
+#define CONFIG_SEPARATOR_CHARSET _T(" =-\n")
 
 /* Option window definitions */
-#define OPTWND_CLASS_NAME        "mapimp_wnd"
-#define OPTWND_WINDOW_NAME       "Options"
-#define OPTWND_FONT_NAME         "Verdana"
-#define OPTWND_ICON_NAME         "ICO_OPTIONS"
+#define OPTWND_CLASS_NAME        _T("mapimp_wnd")
+#define OPTWND_WINDOW_NAME       _T("Options")
+#define OPTWND_FONT_NAME         _T("Verdana")
+#if defined(OLLYDBG) || defined(IMMDBG)
+#define OPTWND_ICON_NAME         _T("ICO_OPTIONS")
+#endif
 #define OPTWND_WINDOW_WIDTH      427
 #define OPTWND_WINDOW_HEIGHT     312
 

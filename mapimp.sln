@@ -9,16 +9,24 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "masktest", "masktest.vcxpro
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Win32 = Debug|Win32
-		Release|Win32 = Release|Win32
+		Debug_odbg|Win32 = Debug_odbg|Win32
+		Release_immdbg|Win32 = Release_immdbg|Win32
+		Release_odbg|Win32 = Release_odbg|Win32
+		Release_odbg2|Win32 = Release_odbg2|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{2DBD6ACA-FD49-4D06-AA30-25BF49ACA659}.Debug|Win32.ActiveCfg = Release|Win32
-		{2DBD6ACA-FD49-4D06-AA30-25BF49ACA659}.Debug|Win32.Build.0 = Release|Win32
-		{2DBD6ACA-FD49-4D06-AA30-25BF49ACA659}.Release|Win32.ActiveCfg = Release|Win32
-		{2DBD6ACA-FD49-4D06-AA30-25BF49ACA659}.Release|Win32.Build.0 = Release|Win32
-		{455D8C7C-C4B6-423B-89B1-1292C164F614}.Debug|Win32.ActiveCfg = Release|Win32
-		{455D8C7C-C4B6-423B-89B1-1292C164F614}.Release|Win32.ActiveCfg = Release|Win32
+		{2DBD6ACA-FD49-4D06-AA30-25BF49ACA659}.Debug_odbg|Win32.ActiveCfg = Debug_odbg|Win32
+		{2DBD6ACA-FD49-4D06-AA30-25BF49ACA659}.Debug_odbg|Win32.Build.0 = Debug_odbg|Win32
+		{2DBD6ACA-FD49-4D06-AA30-25BF49ACA659}.Release_immdbg|Win32.ActiveCfg = Release_immdbg|Win32
+		{2DBD6ACA-FD49-4D06-AA30-25BF49ACA659}.Release_immdbg|Win32.Build.0 = Release_immdbg|Win32
+		{2DBD6ACA-FD49-4D06-AA30-25BF49ACA659}.Release_odbg|Win32.ActiveCfg = Release_odbg|Win32
+		{2DBD6ACA-FD49-4D06-AA30-25BF49ACA659}.Release_odbg|Win32.Build.0 = Release_odbg|Win32
+		{2DBD6ACA-FD49-4D06-AA30-25BF49ACA659}.Release_odbg2|Win32.ActiveCfg = Release_odbg2|Win32
+		{2DBD6ACA-FD49-4D06-AA30-25BF49ACA659}.Release_odbg2|Win32.Build.0 = Release_odbg2|Win32
+		{455D8C7C-C4B6-423B-89B1-1292C164F614}.Debug_odbg|Win32.ActiveCfg = Debug_odbg|Win32
+		{455D8C7C-C4B6-423B-89B1-1292C164F614}.Release_immdbg|Win32.ActiveCfg = Release_immdbg|Win32
+		{455D8C7C-C4B6-423B-89B1-1292C164F614}.Release_odbg|Win32.ActiveCfg = Release_odbg|Win32
+		{455D8C7C-C4B6-423B-89B1-1292C164F614}.Release_odbg2|Win32.ActiveCfg = Release_odbg2|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

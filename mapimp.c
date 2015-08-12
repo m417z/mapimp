@@ -35,6 +35,7 @@ POSSIBILITY OF SUCH DAMAGE BLAH BLAH BLAH
 
 #include <windows.h>
 #include <commctrl.h>
+#include <tchar.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -42,13 +43,17 @@ POSSIBILITY OF SUCH DAMAGE BLAH BLAH BLAH
 
 #ifndef MASKTEST
 
-HWND      g_hwndOlly,
-          g_hwndMaskList;
+HWND      g_hwndOlly;
+HWND      g_hwndMaskList;
 HINSTANCE g_hInstance,
           g_hInstDLL;
 HFONT     g_hFont;
 BOOL      g_SessionStarted;
 BOOL      g_Autoloaded;
+#if defined(OLLYDBG2)
+int       g_nMaskDlgSaveType,
+          g_nRegionDlgSaveType;
+#endif
 
 #endif
 
@@ -57,22 +62,22 @@ pconfig_t g_Config;
 #ifndef MASKTEST
 
 static TCHAR c_About[] =
-    "mapimp plugin v1.0\n"
-    "coded by takerZ\n\n"
-    "Thanks to all those, who had contributed\n"
-    "their code, ideas and bugreports:\n\n"
-    "9999 (mysterious guy from the board)\n"
-    "awerto\n"
-    "BoRoV\n"
-    "DillerInc\n"
-    "Jupiter\n"
-    "PE_Kill\n"
-    "RaMMicHaeL\n"
-    "Runner\n"
-    "sendersu\n"
-    "void\n\n"
-    "My excuses if forgot somebody.\n\n"
-    "tPORt, 2009-2012";
+    _T("mapimp plugin v1.0\n")
+    _T("coded by takerZ\n\n")
+    _T("Thanks to all those, who had contributed\n")
+    _T("their code, ideas and bugreports:\n\n")
+    _T("9999 (mysterious guy from the board)\n")
+    _T("awerto\n")
+    _T("BoRoV\n")
+    _T("DillerInc\n")
+    _T("Jupiter\n")
+    _T("PE_Kill\n")
+    _T("RaMMicHaeL\n")
+    _T("Runner\n")
+    _T("sendersu\n")
+    _T("void\n\n")
+    _T("My excuses if forgot somebody.\n\n")
+    _T("tPORt, 2009-2012");
 
 static ACCEL c_AccelTable[] =
 {
@@ -112,21 +117,21 @@ int mask_compile(pmask_t msk, TCHAR* subj)
           cntr_repl;
     TCHAR buffer[TEXTLEN];
 
-    if (subj[0] == '/')
+    if (subj[0] == _T('/'))
     {
-        if ((subj[cntr_msk] == 'i') || (subj[cntr_msk] == 'I'))
+        if ((subj[cntr_msk] == _T('i')) || (subj[cntr_msk] == _T('I')))
         {
             mod = PCRE_CASELESS;
             cntr_msk++;
         }
 
-        if ((subj[cntr_msk] == 's') || (subj[cntr_msk] == 'S'))
+        if ((subj[cntr_msk] == _T('s')) || (subj[cntr_msk] == _T('S')))
         {
-            msk->regex = pcre_compile2(&subj[cntr_msk + 1], mod, &msk->errcode, &msk->errptr, &msk->erroffset, NULL);
+            msk->regex = _t_pcre_compile2(&subj[cntr_msk + 1], mod, &msk->errcode, &msk->errptr, &msk->erroffset, NULL);
 
             if (!msk->errcode)
             {
-                msk->extra = pcre_study((const pcre*)msk->regex, 0, &msk->errptr);
+                msk->extra = _t_pcre_study(msk->regex, 0, &msk->errptr);
                 msk->type = FILTER_SKIP;
             }
             else
@@ -134,13 +139,13 @@ int mask_compile(pmask_t msk, TCHAR* subj)
                 msk->erroffset += cntr_msk + 1;
             }
         }
-        else if ((subj[cntr_msk] == 'c') || (subj[cntr_msk] == 'C'))
+        else if ((subj[cntr_msk] == _T('c')) || (subj[cntr_msk] == _T('C')))
         {
-            msk->regex = pcre_compile2(&subj[cntr_msk + 1], mod, &msk->errcode, &msk->errptr, &msk->erroffset, NULL);
+            msk->regex = _t_pcre_compile2(&subj[cntr_msk + 1], mod, &msk->errcode, &msk->errptr, &msk->erroffset, NULL);
 
             if (!msk->errcode)
             {
-                msk->extra = pcre_study(msk->regex, 0, &msk->errptr);
+                msk->extra = _t_pcre_study(msk->regex, 0, &msk->errptr);
                 msk->type = FILTER_CUT;
             }
             else
@@ -148,29 +153,29 @@ int mask_compile(pmask_t msk, TCHAR* subj)
                 msk->erroffset += cntr_msk + 1;
             }
         }
-        else if ((subj[cntr_msk] == 'r') || (subj[cntr_msk] == 'R'))
+        else if ((subj[cntr_msk] == _T('r')) || (subj[cntr_msk] == _T('R')))
         {
             msk->insert = -1;
 
             for (cntr_msk++, cntr_repl = 0; TRUE; cntr_msk++)
             {
-                if (subj[cntr_msk] == '\0')
+                if (subj[cntr_msk] == _T('\0'))
                 {
                     msk->errcode = FILTER_INVALID_REPLACEMENT;
 
                     return FILTER_INVALID_REPLACEMENT;
                 }
-                else if (subj[cntr_msk] == '/')
+                else if (subj[cntr_msk] == _T('/'))
                 {
                     break;
                 }
-                else if (subj[cntr_msk] == '\\')
+                else if (subj[cntr_msk] == _T('\\'))
                 {
                     buffer[cntr_repl] = subj[cntr_msk + 1];
                     cntr_msk++;
                     cntr_repl++;
                 }
-                else if (subj[cntr_msk] == '%')
+                else if (subj[cntr_msk] == _T('%'))
                 {
                     if (msk->insert < 0)
                     {
@@ -183,16 +188,16 @@ int mask_compile(pmask_t msk, TCHAR* subj)
                     cntr_repl++;
                 }
             }
-            buffer[cntr_repl] = '\0';
+            buffer[cntr_repl] = _T('\0');
 
-            msk->regex = pcre_compile2(&subj[cntr_msk + 1], mod, &msk->errcode, &msk->errptr, &msk->erroffset, NULL);
+            msk->regex = _t_pcre_compile2(&subj[cntr_msk + 1], mod, &msk->errcode, &msk->errptr, &msk->erroffset, NULL);
 
             if (!msk->errcode)
             {
-                msk->repl_s = (strlen(buffer) + 1) * sizeof(TCHAR);
+                msk->repl_s = (_tcslen(buffer) + 1) * sizeof(TCHAR);
                 msk->repl = malloc(msk->repl_s);
-                strcpy(msk->repl, buffer);
-                msk->extra = pcre_study(msk->regex, 0, &msk->errptr);
+                _tcscpy(msk->repl, buffer);
+                msk->extra = _t_pcre_study(msk->regex, 0, &msk->errptr);
                 msk->type = FILTER_REPLACE;
             }
             else
@@ -223,19 +228,23 @@ void mask_error(pmask_t msk, TCHAR* errbuf)
             break;
 
         case FILTER_INVALID_MASK:
-            sprintf(errbuf, "missing mask magic / at offset %d", msk->erroffset);
+            _stprintf(errbuf, _T("missing mask magic / at offset %d"), msk->erroffset);
             break;
 
         case FILTER_INVALID_KEY:
-            sprintf(errbuf, "invalid key at offset %d", msk->erroffset);
+            _stprintf(errbuf, _T("invalid key at offset %d"), msk->erroffset);
             break;
 
         case FILTER_INVALID_REPLACEMENT:
-            strcpy(errbuf, "missing replacement terminating /");
+            _tcscpy(errbuf, _T("missing replacement terminating /"));
             break;
 
         default:
-            sprintf(errbuf, "%s at offset %d", msk->errptr, msk->erroffset);
+#if defined(OLLYDBG) || defined(IMMDBG)
+            _stprintf(errbuf, _T("%s at offset %d"), msk->errptr, msk->erroffset);
+#elif defined(OLLYDBG2)
+            _stprintf(errbuf, _T("%S at offset %d"), msk->errptr, msk->erroffset);
+#endif
             break;
     }
 }
@@ -257,17 +266,17 @@ int mask_filter(pname_t name)
     {
         if (msk->type == FILTER_SKIP)
         {
-            /* if pcre_exec() fails, it returns negative values */
-            if (pcre_exec((const pcre*)msk->regex,
-                          (const pcre_extra*)msk->extra,
-                          name->buffer,
-                          name_ln,
-                          0,
-                          PCRE_NOTEMPTY,
-                          NULL,
-                          0) >= 0)
+            /* if _t_pcre_exec() fails, it returns negative values */
+            if (_t_pcre_exec(msk->regex,
+                             msk->extra,
+                             name->buffer,
+                             name_ln,
+                             0,
+                             PCRE_NOTEMPTY,
+                             NULL,
+                             0) >= 0)
             {
-                name->buffer[0] = '\0';
+                name->buffer[0] = _T('\0');
                 name_ln = 0;
                 result = FILTER_SKIP;
 
@@ -276,14 +285,14 @@ int mask_filter(pname_t name)
         }
         else if (msk->type == FILTER_CUT)
         {
-            while (pcre_exec((const pcre*)msk->regex,
-                             (const pcre_extra*)msk->extra,
-                             name->buffer,
-                             name_ln,
-                             0,
-                             PCRE_NOTEMPTY,
-                             (int*)&match,
-                             OVECTOR_COMP_COUNT) >= 0)
+            while (_t_pcre_exec(msk->regex,
+                                msk->extra,
+                                name->buffer,
+                                name_ln,
+                                0,
+                                PCRE_NOTEMPTY,
+                                (int*)&match,
+                                OVECTOR_COMP_COUNT) >= 0)
             {
                 memcpy(&name->buffer[match.rm_so], &name->buffer[match.rm_eo], (name_ln - match.rm_eo + 1) * sizeof(TCHAR));
                 name_ln -= match.rm_eo - match.rm_so;
@@ -295,14 +304,14 @@ int mask_filter(pname_t name)
             repl_ln = msk->repl_s / sizeof(TCHAR) - 1;
             offset = -(int)repl_ln;
 
-            while (pcre_exec((const pcre*)msk->regex,
-                             (const pcre_extra*)msk->extra,
-                             name->buffer,
-                             name_ln,
-                             repl_ln + offset,
-                             PCRE_NOTEMPTY | PCRE_NO_UTF8_CHECK,
-                             (int*)&match,
-                             OVECTOR_COMP_COUNT) >= 0)
+            while (_t_pcre_exec(msk->regex,
+                                msk->extra,
+                                name->buffer,
+                                name_ln,
+                                repl_ln + offset,
+                                PCRE_NOTEMPTY | PCRE_NO_UTF8_CHECK,
+                                (int*)&match,
+                                OVECTOR_COMP_COUNT) >= 0)
             {
                 rm_ln = match.rm_eo - match.rm_so;
 
@@ -366,8 +375,8 @@ pmask_t list_add_mask(plist_t lst, TCHAR* str)
     {
         if (!mask_compile(msk, str))
         {
-            msk->buffer = malloc((strlen(str) + 1) * sizeof(TCHAR));
-            strcpy(msk->buffer, str);
+            msk->buffer = malloc((_tcslen(str) + 1) * sizeof(TCHAR));
+            _tcscpy(msk->buffer, str);
 
             if (!lst->first)
             {
@@ -395,7 +404,7 @@ plist_t list_add_name(plist_t lst, TCHAR* name, size_t length, ULONG segment, UL
     if (name)
     {
         nm->buffer = malloc(nm->size = (length + 1) * sizeof(TCHAR));
-        strcpy(nm->buffer, name);
+        _tcscpy(nm->buffer, name);
     }
     else
     {
@@ -430,11 +439,11 @@ void list_free_masks(plist_t lst)
 
     while (msk)
     {
-        pcre_free(msk->regex);
+        _t_pcre_free(msk->regex);
 
         if (msk->extra)
         {
-            pcre_free(msk->extra);
+            _t_pcre_free(msk->extra);
         }
 
         free(msk->buffer);
@@ -479,47 +488,47 @@ void list_free_names(plist_t lst)
 BOOL config_create(TCHAR* path, pconfig_t conf)
 {
     BOOL    result = FALSE;
-    FILE*   file = fopen(path, "w");
+    FILE*   file = _tfopen(path, _T("w"));
     pmask_t msk;
 
     if (file)
     {
-        fprintf(file, "# WARNING! If you want to edit this config file manually,\n"
-                      "# please read corresponding comments and be careful\n"
-                      "# Import comments (0 - No; 1 - Yes)\n"
-                      "%s=%d\n"
-                      "# Import labels (0 - No; 1 - Yes)\n"
-                      "%s=%d\n"
-                      "# Check for collisions (0 - Overwrite; 1 - Skip if collision)\n"
-                      "%s=%d\n"
-                      "# Read segments from (0 - Read only from memory; 1 - Read from file first, then\n"
-                      "# from memory if failed)\n"
-                      "%s=%d\n"
-                      "# Autoimport map if present (0 - Disabled; 1 - Ask to import;\n"
-                      "# 2 - Import always)\n"
-                      "%s=%d\n"
-                      "# Demangle names (0 - No; 1 - Yes)\n"
-                      "%s=%d\n"
-                      "# Filter names using masks (0 - No; 1 - Yes)\n"
-                      "%s=%d\n"
-                      "# User specified masks. The \"value\" specifies the number of masks\n"
-                      "# next \"value\" lines are masks themselves. If the mask fails to compile it is\n"
-                      "# ignored\n"
-                      "%s=%d\n",
-                      CONFIG_STR_COMMENTS, conf->comments,
-                      CONFIG_STR_LABELS, conf->labels,
-                      CONFIG_STR_COLLISIONS, conf->check_collisions,
-                      CONFIG_STR_FILESEG, conf->read_file_segments,
-                      CONFIG_STR_AUTOIMPORT, conf->autoimport,
-                      CONFIG_STR_DEMANGLE, conf->demangle,
-                      CONFIG_STR_USEMASKS, conf->use_masks,
-                      CONFIG_STR_MASKS, conf->masks->count);
+        _ftprintf(file, _T("# WARNING! If you want to edit this config file manually,\n")
+                        _T("# please read corresponding comments and be careful\n")
+                        _T("# Import comments (0 - No; 1 - Yes)\n")
+                        _T("%s=%d\n")
+                        _T("# Import labels (0 - No; 1 - Yes)\n")
+                        _T("%s=%d\n")
+                        _T("# Check for collisions (0 - Overwrite; 1 - Skip if collision)\n")
+                        _T("%s=%d\n")
+                        _T("# Read segments from (0 - Read only from memory; 1 - Read from file first, then\n")
+                        _T("# from memory if failed)\n")
+                        _T("%s=%d\n")
+                        _T("# Autoimport map if present (0 - Disabled; 1 - Ask to import;\n")
+                        _T("# 2 - Import always)\n")
+                        _T("%s=%d\n")
+                        _T("# Demangle names (0 - No; 1 - Yes)\n")
+                        _T("%s=%d\n")
+                        _T("# Filter names using masks (0 - No; 1 - Yes)\n")
+                        _T("%s=%d\n")
+                        _T("# User specified masks. The \"value\" specifies the number of masks\n")
+                        _T("# next \"value\" lines are masks themselves. If the mask fails to compile it is\n")
+                        _T("# ignored\n")
+                        _T("%s=%d\n"),
+                        CONFIG_STR_COMMENTS, conf->comments,
+                        CONFIG_STR_LABELS, conf->labels,
+                        CONFIG_STR_COLLISIONS, conf->check_collisions,
+                        CONFIG_STR_FILESEG, conf->read_file_segments,
+                        CONFIG_STR_AUTOIMPORT, conf->autoimport,
+                        CONFIG_STR_DEMANGLE, conf->demangle,
+                        CONFIG_STR_USEMASKS, conf->use_masks,
+                        CONFIG_STR_MASKS, conf->masks->count);
 
         msk = (pmask_t)conf->masks->first;
 
         while (msk)
         {
-            fprintf(file, "%s\n", msk->buffer);
+            _ftprintf(file, _T("%s\n"), msk->buffer);
             msk = msk->next;
         }
 
@@ -534,7 +543,7 @@ BOOL config_create(TCHAR* path, pconfig_t conf)
 TCHAR* config_locate(TCHAR* buffer)
 {
     GetModuleFileName(g_hInstDLL, buffer, MAX_PATH);
-    strcpy(strrchr(buffer, '\\'), "\\mapimp.cfg");
+    _tcscpy(_tcsrchr(buffer, _T('\\')), _T("\\mapimp.cfg"));
 
     return buffer;
 }
@@ -553,7 +562,7 @@ void config_defaults(pconfig_t conf)
 
 pconfig_t config_parse(TCHAR* path)
 {
-    FILE*     file = fopen(path, "r");
+    FILE*     file = _tfopen(path, _T("r"));
     TCHAR     buffer[TEXTLEN],
               param[CONFIG_STR_MAXSIZE];
     size_t    len,
@@ -565,98 +574,98 @@ pconfig_t config_parse(TCHAR* path)
 
     if (file)
     {
-        while (fgets(buffer, TEXTLEN, file))
+        while (_fgetts(buffer, TEXTLEN, file))
         {
-            len = sizeof(CONFIG_STR_COMMENTS) - 1;
-            strncpy(param, buffer, len);
-            param[len] = '\0';
+            len = _countof(CONFIG_STR_COMMENTS) - 1;
+            _tcsncpy(param, buffer, len);
+            param[len] = _T('\0');
 
-            if (!stricmp(CONFIG_STR_COMMENTS, param))
+            if (!_tcsicmp(CONFIG_STR_COMMENTS, param))
             {
-                strtok(buffer, CONFIG_SEPARATOR_CHARSET);
-                conf->comments = atoi(strtok(NULL, CONFIG_SEPARATOR_CHARSET));
+                _tcstok(buffer, CONFIG_SEPARATOR_CHARSET);
+                conf->comments = _ttoi(_tcstok(NULL, CONFIG_SEPARATOR_CHARSET));
                 continue;
             }
 
-            len = sizeof(CONFIG_STR_LABELS) - 1;
-            strncpy(param, buffer, len);
-            param[len] = '\0';
+            len = _countof(CONFIG_STR_LABELS) - 1;
+            _tcsncpy(param, buffer, len);
+            param[len] = _T('\0');
 
-            if (!stricmp(CONFIG_STR_LABELS, param))
+            if (!_tcsicmp(CONFIG_STR_LABELS, param))
             {
-                strtok(buffer, CONFIG_SEPARATOR_CHARSET);
-                conf->labels = atoi(strtok(NULL, CONFIG_SEPARATOR_CHARSET));
+                _tcstok(buffer, CONFIG_SEPARATOR_CHARSET);
+                conf->labels = _ttoi(_tcstok(NULL, CONFIG_SEPARATOR_CHARSET));
                 continue;
             }
 
-            len = sizeof(CONFIG_STR_COLLISIONS) - 1;
-            strncpy(param, buffer, len);
-            param[len] = '\0';
+            len = _countof(CONFIG_STR_COLLISIONS) - 1;
+            _tcsncpy(param, buffer, len);
+            param[len] = _T('\0');
 
-            if (!stricmp(CONFIG_STR_COLLISIONS, param))
+            if (!_tcsicmp(CONFIG_STR_COLLISIONS, param))
             {
-                strtok(buffer, CONFIG_SEPARATOR_CHARSET);
-                conf->check_collisions = atoi(strtok(NULL, CONFIG_SEPARATOR_CHARSET));
+                _tcstok(buffer, CONFIG_SEPARATOR_CHARSET);
+                conf->check_collisions = _ttoi(_tcstok(NULL, CONFIG_SEPARATOR_CHARSET));
                 continue;
             }
 
-            len = sizeof(CONFIG_STR_FILESEG) - 1;
-            strncpy(param, buffer, len);
-            param[len] = '\0';
+            len = _countof(CONFIG_STR_FILESEG) - 1;
+            _tcsncpy(param, buffer, len);
+            param[len] = _T('\0');
 
-            if (!stricmp(CONFIG_STR_FILESEG, param))
+            if (!_tcsicmp(CONFIG_STR_FILESEG, param))
             {
-                strtok(buffer, CONFIG_SEPARATOR_CHARSET);
-                conf->read_file_segments = atoi(strtok(NULL, CONFIG_SEPARATOR_CHARSET));
+                _tcstok(buffer, CONFIG_SEPARATOR_CHARSET);
+                conf->read_file_segments = _ttoi(_tcstok(NULL, CONFIG_SEPARATOR_CHARSET));
                 continue;
             }
 
-            len = sizeof(CONFIG_STR_AUTOIMPORT) - 1;
-            strncpy(param, buffer, len);
-            param[len] = '\0';
+            len = _countof(CONFIG_STR_AUTOIMPORT) - 1;
+            _tcsncpy(param, buffer, len);
+            param[len] = _T('\0');
 
-            if (!stricmp(CONFIG_STR_AUTOIMPORT, param))
+            if (!_tcsicmp(CONFIG_STR_AUTOIMPORT, param))
             {
-                strtok(buffer, CONFIG_SEPARATOR_CHARSET);
-                conf->autoimport = atoi(strtok(NULL, CONFIG_SEPARATOR_CHARSET));
+                _tcstok(buffer, CONFIG_SEPARATOR_CHARSET);
+                conf->autoimport = _ttoi(_tcstok(NULL, CONFIG_SEPARATOR_CHARSET));
                 continue;
             }
 
-            len = sizeof(CONFIG_STR_DEMANGLE) - 1;
-            strncpy(param, buffer, len);
-            param[len] = '\0';
+            len = _countof(CONFIG_STR_DEMANGLE) - 1;
+            _tcsncpy(param, buffer, len);
+            param[len] = _T('\0');
 
-            if (!stricmp(CONFIG_STR_DEMANGLE, param))
+            if (!_tcsicmp(CONFIG_STR_DEMANGLE, param))
             {
-                strtok(buffer, CONFIG_SEPARATOR_CHARSET);
-                conf->demangle = atoi(strtok(NULL, CONFIG_SEPARATOR_CHARSET));
+                _tcstok(buffer, CONFIG_SEPARATOR_CHARSET);
+                conf->demangle = _ttoi(_tcstok(NULL, CONFIG_SEPARATOR_CHARSET));
                 continue;
             }
 
-            len = sizeof(CONFIG_STR_USEMASKS) - 1;
-            strncpy(param, buffer, len);
-            param[len] = '\0';
+            len = _countof(CONFIG_STR_USEMASKS) - 1;
+            _tcsncpy(param, buffer, len);
+            param[len] = _T('\0');
 
-            if (!stricmp(CONFIG_STR_USEMASKS, param))
+            if (!_tcsicmp(CONFIG_STR_USEMASKS, param))
             {
-                strtok(buffer, CONFIG_SEPARATOR_CHARSET);
-                conf->use_masks = atoi(strtok(NULL, CONFIG_SEPARATOR_CHARSET));
+                _tcstok(buffer, CONFIG_SEPARATOR_CHARSET);
+                conf->use_masks = _ttoi(_tcstok(NULL, CONFIG_SEPARATOR_CHARSET));
                 continue;
             }
 
-            len = sizeof(CONFIG_STR_MASKS) - 1;
-            strncpy(param, buffer, len);
-            param[len] = '\0';
+            len = _countof(CONFIG_STR_MASKS) - 1;
+            _tcsncpy(param, buffer, len);
+            param[len] = _T('\0');
 
-            if (!stricmp(CONFIG_STR_MASKS, param))
+            if (!_tcsicmp(CONFIG_STR_MASKS, param))
             {
-                strtok(buffer, CONFIG_SEPARATOR_CHARSET);
+                _tcstok(buffer, CONFIG_SEPARATOR_CHARSET);
                 conf->masks = list_create();
-                count = atoi(strtok(NULL, CONFIG_SEPARATOR_CHARSET));
+                count = _ttoi(_tcstok(NULL, CONFIG_SEPARATOR_CHARSET));
 
-                while (conf->masks->count < count && fgets(buffer, TEXTLEN, file))
+                while (conf->masks->count < count && _fgetts(buffer, TEXTLEN, file))
                 {
-                    msk = list_add_mask(conf->masks, strtok(buffer, "\n"));
+                    msk = list_add_mask(conf->masks, _tcstok(buffer, _T("\n")));
 
                     if (msk->errcode)
                     {
@@ -683,7 +692,7 @@ BOOL menuitem_add(HMENU hmenu, TCHAR* lpstr, UINT index, UINT id)
     {
         mi.fType = MFT_STRING;
         mi.dwTypeData = lpstr;
-        mi.cch = strlen(lpstr);
+        mi.cch = _tcslen(lpstr);
     }
     else
     {
@@ -707,23 +716,23 @@ LRESULT CALLBACK listbox_msgproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
         case WM_RBUTTONDOWN:
             pm = CreatePopupMenu();
 
-            menuitem_add(pm, "Add", 0, ID_ADD);
+            menuitem_add(pm, _T("Add"), 0, ID_ADD);
 
             if (SendMessage(hwnd, LB_GETCURSEL, 0, 0) != LB_ERR)
             {
-                menuitem_add(pm, "Insert", 1, ID_INSERT);
-                menuitem_add(pm, "Edit", 2, ID_EDIT);
-                menuitem_add(pm, "Delete", 3, ID_DELETE);
+                menuitem_add(pm, _T("Insert"), 1, ID_INSERT);
+                menuitem_add(pm, _T("Edit"), 2, ID_EDIT);
+                menuitem_add(pm, _T("Delete"), 3, ID_DELETE);
             }
 
             menuitem_add(pm, NULL, 4, 0);
 
             if (SendMessage(hwnd, LB_GETCOUNT, 0, 0) > 0)
             {
-                menuitem_add(pm, "Save list", 5, ID_SAVE);
+                menuitem_add(pm, _T("Save list"), 5, ID_SAVE);
             }
 
-            menuitem_add(pm, "Load list", 6, ID_LOAD);
+            menuitem_add(pm, _T("Load list"), 6, ID_LOAD);
 
             point.x = LOWORD(lparam);
             point.y = HIWORD(lparam);
@@ -993,24 +1002,28 @@ LRESULT CALLBACK configwnd_msgproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
                     {
                         EnableWindow(hwnd, FALSE);
 
-                        buffer[0] = '\0';
+                        buffer[0] = _T('\0');
 
-                        if (Browsefilename("Save mask list to:", buffer, ".TXT|*.*", 0x80))
+#if defined(OLLYDBG) || defined(IMMDBG)
+                        if (Browsefilename(_T("Save mask list to:"), buffer, _T(".TXT|*.*"), 0x80))
+#elif defined(OLLYDBG2)
+                        if (Browsefilename(_T("Save mask list to:"), buffer, NULL, NULL, _T(".TXT|*.*"), hwollymain, BRO_FILE | BRO_SAVE))
+#endif
                         {
-                            if (file = fopen(buffer, "w"))
+                            if (file = _tfopen(buffer, _T("w")))
                             {
                                 for (counter = 0; counter < count; counter++)
                                 {
                                     SendMessage(g_hwndMaskList, LB_GETTEXT, counter, (LPARAM)buffer);
-                                    strcat(buffer, "\n");
-                                    fputs(buffer, file);
+                                    _tcscat(buffer, _T("\n"));
+                                    _fputts(buffer, file);
                                 }
 
                                 fclose(file);
                             }
                             else
                             {
-                                MessageBox(hwnd, "Failed to open the file for writing", 0, MB_ICONERROR);
+                                MessageBox(hwnd, _T("Failed to open the file for writing"), 0, MB_ICONERROR);
                             }
                         }
 
@@ -1022,27 +1035,31 @@ LRESULT CALLBACK configwnd_msgproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
                 case ID_LOAD:
                     EnableWindow(hwnd, FALSE);
 
-                    buffer[0] = '\0';
+                    buffer[0] = _T('\0');
 
-                    if (Browsefilename("Load mask list from:", buffer, ".TXT|*.*", 0))
+#if defined(OLLYDBG) || defined(IMMDBG)
+                    if (Browsefilename(_T("Load mask list from:"), buffer, _T(".TXT | *.*"), 0))
+#elif defined(OLLYDBG2)
+                    if (Browsefilename(_T("Load mask list from:"), buffer, NULL, NULL, _T(".TXT | *.*"), hwollymain, BRO_FILE))
+#endif
                     {
-                        if (file = fopen(buffer, "r"))
+                        if (file = _tfopen(buffer, _T("r")))
                         {
                             while (SendMessage(g_hwndMaskList, LB_DELETESTRING, 0, 0) != LB_ERR) {}
 
-                            while (fgets(buffer, TEXTLEN, file))
+                            while (_fgetts(buffer, TEXTLEN, file))
                             {
-                                strtok(buffer, "\n");
+                                _tcstok(buffer, _T("\n"));
 
                                 if (!mask_compile(&msk_tmp, buffer))
                                 {
                                     SendMessage(g_hwndMaskList, LB_ADDSTRING, 0, (LPARAM)buffer);
 
-                                    pcre_free(msk_tmp.regex);
+                                    _t_pcre_free(msk_tmp.regex);
 
                                     if (msk_tmp.extra)
                                     {
-                                        pcre_free(msk_tmp.extra);
+                                        _t_pcre_free(msk_tmp.extra);
                                     }
                                 }
                             }
@@ -1052,7 +1069,7 @@ LRESULT CALLBACK configwnd_msgproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
                         }
                         else
                         {
-                            MessageBox(hwnd, "Failed to open the file", 0, MB_ICONERROR);
+                            MessageBox(hwnd, _T("Failed to open the file"), 0, MB_ICONERROR);
                         }
                     }
 
@@ -1063,38 +1080,51 @@ LRESULT CALLBACK configwnd_msgproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
                 case ID_ADD:
                     EnableWindow(hwnd, FALSE);
 
-                    buffer[0] = '\0';
+                    buffer[0] = _T('\0');
                     result = TRUE;
 
                     while (result)
                     {
-                        result = Gettextxy("Add new mask:",
+#if defined(OLLYDBG) || defined(IMMDBG)
+                        result = Gettextxy(_T("Add new mask:"),
                                            buffer,
                                            0,
                                            INPUTWND_TYPE,
                                            Plugingetvalue(VAL_WINDOWFONT),
                                            GetSystemMetrics(SM_CXSCREEN) / 2,
                                            GetSystemMetrics(SM_CYSCREEN) / 2);
+#elif defined(OLLYDBG2)
+                        result = Getstring(hwollymain,
+                                           _T("Add new mask:"),
+                                           buffer,
+                                           TEXTLEN,
+                                           g_nMaskDlgSaveType,
+                                           0,
+                                           GetSystemMetrics(SM_CXSCREEN) / 2,
+                                           GetSystemMetrics(SM_CYSCREEN) / 2,
+                                           -1,
+                                           0);
+#endif
 
                         if (result > 0)
                         {
                             if (result = mask_compile(&msk_tmp, buffer))
                             {
-                                strcpy(errbuf, buffer);
-                                strcat(errbuf, "\n\n");
-                                mask_error(&msk_tmp, strrchr(errbuf, '\n') + 1);
+                                _tcscpy(errbuf, buffer);
+                                _tcscat(errbuf, _T("\n\n"));
+                                mask_error(&msk_tmp, _tcsrchr(errbuf, _T('\n')) + 1);
 
-                                MessageBox(hwnd, errbuf, "Mask syntax error", MB_ICONERROR);
+                                MessageBox(hwnd, errbuf, _T("Mask syntax error"), MB_ICONERROR);
                             }
                             else
                             {
                                 SendMessage(g_hwndMaskList, LB_SETCURSEL, SendMessage(g_hwndMaskList, LB_ADDSTRING, 0, (LPARAM)buffer), 0);
 
-                                pcre_free(msk_tmp.regex);
+                                _t_pcre_free(msk_tmp.regex);
 
                                 if (msk_tmp.extra)
                                 {
-                                    pcre_free(msk_tmp.extra);
+                                    _t_pcre_free(msk_tmp.extra);
                                 }
                             }
                         }
@@ -1115,28 +1145,41 @@ LRESULT CALLBACK configwnd_msgproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
                     {
                         EnableWindow(hwnd, FALSE);
 
-                        buffer[0] = '\0';
+                        buffer[0] = _T('\0');
                         result = TRUE;
 
                         while (result)
                         {
-                            result = Gettextxy("Insert new mask:",
+#if defined(OLLYDBG) || defined(IMMDBG)
+                            result = Gettextxy(_T("Insert new mask:"),
                                                buffer,
                                                0,
                                                INPUTWND_TYPE,
                                                Plugingetvalue(VAL_WINDOWFONT),
                                                GetSystemMetrics(SM_CXSCREEN) / 2,
                                                GetSystemMetrics(SM_CYSCREEN) / 2);
+#elif defined(OLLYDBG2)
+                            result = Getstring(hwollymain,
+                                               _T("Insert new mask:"),
+                                               buffer,
+                                               TEXTLEN,
+                                               g_nMaskDlgSaveType,
+                                               0,
+                                               GetSystemMetrics(SM_CXSCREEN) / 2,
+                                               GetSystemMetrics(SM_CYSCREEN) / 2,
+                                               -1,
+                                               0);
+#endif
 
                             if (result > 0)
                             {
                                 if (result = mask_compile(&msk_tmp, buffer))
                                 {
-                                    strcpy(errbuf, buffer);
-                                    strcat(errbuf, "\n\n");
-                                    mask_error(&msk_tmp, strrchr(errbuf, '\n') + 1);
+                                    _tcscpy(errbuf, buffer);
+                                    _tcscat(errbuf, _T("\n\n"));
+                                    mask_error(&msk_tmp, _tcsrchr(errbuf, _T('\n')) + 1);
 
-                                    MessageBox(hwnd, errbuf, "Mask syntax error", MB_ICONERROR);
+                                    MessageBox(hwnd, errbuf, _T("Mask syntax error"), MB_ICONERROR);
                                 }
                                 else
                                 {
@@ -1148,11 +1191,11 @@ LRESULT CALLBACK configwnd_msgproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
                                                             (LPARAM)buffer),
                                                 0);
 
-                                    pcre_free(msk_tmp.regex);
+                                    _t_pcre_free(msk_tmp.regex);
 
                                     if (msk_tmp.extra)
                                     {
-                                        pcre_free(msk_tmp.extra);
+                                        _t_pcre_free(msk_tmp.extra);
                                     }
                                 }
                             }
@@ -1179,23 +1222,37 @@ LRESULT CALLBACK configwnd_msgproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 
                         while (result)
                         {
-                            result = Gettextxy("Edit mask:",
+
+#if defined(OLLYDBG) || defined(IMMDBG)
+                            result = Gettextxy(_T("Edit mask:"),
                                                buffer,
                                                0,
                                                INPUTWND_TYPE,
                                                Plugingetvalue(VAL_WINDOWFONT),
                                                GetSystemMetrics(SM_CXSCREEN) / 2,
                                                GetSystemMetrics(SM_CYSCREEN) / 2);
+#elif defined(OLLYDBG2)
+                            result = Getstring(hwollymain,
+                                               _T("Edit mask:"),
+                                               buffer,
+                                               TEXTLEN,
+                                               g_nMaskDlgSaveType,
+                                               0,
+                                               GetSystemMetrics(SM_CXSCREEN) / 2,
+                                               GetSystemMetrics(SM_CYSCREEN) / 2,
+                                               -1,
+                                               0);
+#endif
 
                             if (result > 0)
                             {
                                 if (result = mask_compile(&msk_tmp, buffer))
                                 {
-                                    strcpy(errbuf, buffer);
-                                    strcat(errbuf, "\n\n");
-                                    mask_error(&msk_tmp, strrchr(errbuf, '\n') + 1);
+                                    _tcscpy(errbuf, buffer);
+                                    _tcscat(errbuf, _T("\n\n"));
+                                    mask_error(&msk_tmp, _tcsrchr(errbuf, _T('\n')) + 1);
 
-                                    MessageBox(hwnd, errbuf, "Mask syntax error", MB_ICONERROR);
+                                    MessageBox(hwnd, errbuf, _T("Mask syntax error"), MB_ICONERROR);
                                 }
                                 else
                                 {
@@ -1205,11 +1262,11 @@ LRESULT CALLBACK configwnd_msgproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
                                                 SendMessage(g_hwndMaskList, LB_INSERTSTRING, (WPARAM)index, (LPARAM)buffer),
                                                 0);
 
-                                    pcre_free(msk_tmp.regex);
+                                    _t_pcre_free(msk_tmp.regex);
 
                                     if (msk_tmp.extra)
                                     {
-                                        pcre_free(msk_tmp.extra);
+                                        _t_pcre_free(msk_tmp.extra);
                                     }
                                 }
                             }
@@ -1236,51 +1293,51 @@ LRESULT CALLBACK configwnd_msgproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
             height = rect.bottom - rect.top - height + OPTWND_WINDOW_HEIGHT;
             SetWindowPos(hwnd, NULL, 0, 0, rect.right - rect.left, height, SWP_NOMOVE | SWP_NOZORDER);
 
-            wnd = CreateWindowEx(0, "Button", "Import objects:", 0x50020007, 4, 0, 200, 64, hwnd, (HMENU)ID_IMPORT, g_hInstance, NULL);
+            wnd = CreateWindowEx(0, _T("Button"), _T("Import objects:"), 0x50020007, 4, 0, 200, 64, hwnd, (HMENU)ID_IMPORT, g_hInstance, NULL);
             SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
-            wnd = CreateWindowEx(0, "Button", "&Comments", 0x50010003, 12, 16, 112, 20, hwnd, (HMENU)ID_COMMENTS, g_hInstance, NULL);
+            wnd = CreateWindowEx(0, _T("Button"), _T("&Comments"), 0x50010003, 12, 16, 112, 20, hwnd, (HMENU)ID_COMMENTS, g_hInstance, NULL);
             SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
-            wnd = CreateWindowEx(0, "Button", "&Labels", 0x50010003, 12, 36, 112, 20, hwnd, (HMENU)ID_LABELS, g_hInstance, NULL);
-            SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
-
-            wnd = CreateWindowEx(0, "Button", "Collisions:", 0x50020007, 4, 68, 200, 64, hwnd, (HMENU)ID_COLLISIONS, g_hInstance, NULL);
-            SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
-            wnd = CreateWindowEx(0, "Button", "&Skip if collision", 0x50010009, 12, 86, 116, 16, hwnd, (HMENU)ID_SKIP, g_hInstance, NULL);
-            SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
-            wnd = CreateWindowEx(0, "Button", "&Overwrite", 0x50000009, 12, 106, 116, 16, hwnd, (HMENU)ID_OVERWRITE, g_hInstance, NULL);
+            wnd = CreateWindowEx(0, _T("Button"), _T("&Labels"), 0x50010003, 12, 36, 112, 20, hwnd, (HMENU)ID_LABELS, g_hInstance, NULL);
             SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
 
-            wnd = CreateWindowEx(0, "Button", "Read segments from:", 0x50020007, 4, 136, 200, 64, hwnd, (HMENU)ID_READFROM, g_hInstance, NULL);
+            wnd = CreateWindowEx(0, _T("Button"), _T("Collisions:"), 0x50020007, 4, 68, 200, 64, hwnd, (HMENU)ID_COLLISIONS, g_hInstance, NULL);
             SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
-            wnd = CreateWindowEx(0, "Button", "&File, memory on fail", 0x50010009, 12, 154, 135, 16, hwnd, (HMENU)ID_FILE, g_hInstance, NULL);
+            wnd = CreateWindowEx(0, _T("Button"), _T("&Skip if collision"), 0x50010009, 12, 86, 116, 16, hwnd, (HMENU)ID_SKIP, g_hInstance, NULL);
             SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
-            wnd = CreateWindowEx(0, "Button", "&Memory, assume base on fail", 0x50010009, 12, 174, 184, 16, hwnd, (HMENU)ID_MEMORY, g_hInstance, NULL);
-            SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
-
-            wnd = CreateWindowEx(0, "Button", "If map file found:", 0x50020007, 4, 204, 200, 80, hwnd, (HMENU)ID_AUTOIMPORT, g_hInstance, NULL);
-            SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
-            wnd = CreateWindowEx(0, "Button", "&Ask to import", 0x50000009, 12, 222, 116, 16, hwnd, (HMENU)ID_ASKTOIMPORT, g_hInstance, NULL);
-            SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
-            wnd = CreateWindowEx(0, "Button", "&Import always", 0x50000009, 12, 242, 116, 16, hwnd, (HMENU)ID_IMPORTALWAYS, g_hInstance, NULL);
-            SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
-            wnd = CreateWindowEx(0, "Button", "Do &nothing", 0x50000009, 12, 262, 116, 16, hwnd, (HMENU)ID_DONOTHING, g_hInstance, NULL);
+            wnd = CreateWindowEx(0, _T("Button"), _T("&Overwrite"), 0x50000009, 12, 106, 116, 16, hwnd, (HMENU)ID_OVERWRITE, g_hInstance, NULL);
             SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
 
-            wnd = CreateWindowEx(0, "Button", "Filter:", 0x50020007, 209, 0, 208, 284, hwnd, (HMENU)ID_FILTER, g_hInstance, NULL);
+            wnd = CreateWindowEx(0, _T("Button"), _T("Read segments from:"), 0x50020007, 4, 136, 200, 64, hwnd, (HMENU)ID_READFROM, g_hInstance, NULL);
             SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
-            g_hwndMaskList = CreateWindowEx(0x200, "ListBox", "", WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL, 217, 16, 192, 230, hwnd, (HMENU)ID_MASKS, g_hInstance, NULL);
+            wnd = CreateWindowEx(0, _T("Button"), _T("&File, memory on fail"), 0x50010009, 12, 154, 135, 16, hwnd, (HMENU)ID_FILE, g_hInstance, NULL);
+            SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
+            wnd = CreateWindowEx(0, _T("Button"), _T("&Memory, assume base on fail"), 0x50010009, 12, 174, 184, 16, hwnd, (HMENU)ID_MEMORY, g_hInstance, NULL);
+            SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
+
+            wnd = CreateWindowEx(0, _T("Button"), _T("If map file found:"), 0x50020007, 4, 204, 200, 80, hwnd, (HMENU)ID_AUTOIMPORT, g_hInstance, NULL);
+            SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
+            wnd = CreateWindowEx(0, _T("Button"), _T("&Ask to import"), 0x50000009, 12, 222, 116, 16, hwnd, (HMENU)ID_ASKTOIMPORT, g_hInstance, NULL);
+            SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
+            wnd = CreateWindowEx(0, _T("Button"), _T("&Import always"), 0x50000009, 12, 242, 116, 16, hwnd, (HMENU)ID_IMPORTALWAYS, g_hInstance, NULL);
+            SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
+            wnd = CreateWindowEx(0, _T("Button"), _T("Do &nothing"), 0x50000009, 12, 262, 116, 16, hwnd, (HMENU)ID_DONOTHING, g_hInstance, NULL);
+            SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
+
+            wnd = CreateWindowEx(0, _T("Button"), _T("Filter:"), 0x50020007, 209, 0, 208, 284, hwnd, (HMENU)ID_FILTER, g_hInstance, NULL);
+            SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
+            g_hwndMaskList = CreateWindowEx(0x200, _T("ListBox"), _T(""), WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL, 217, 16, 192, 230, hwnd, (HMENU)ID_MASKS, g_hInstance, NULL);
             SendMessage(g_hwndMaskList, WM_SETFONT, (WPARAM)g_hFont, TRUE);
             SetWindowLongPtr(g_hwndMaskList, GWLP_USERDATA, SetWindowLongPtr(g_hwndMaskList, GWLP_WNDPROC, (LONG)listbox_msgproc));
             SetFocus(g_hwndMaskList);
 
-            wnd = CreateWindowEx(0, "Button", "&Use masks", 0x50010003, 217, 242, 116, 16, hwnd, (HMENU)ID_USEMASKS, g_hInstance, NULL);
+            wnd = CreateWindowEx(0, _T("Button"), _T("&Use masks"), 0x50010003, 217, 242, 116, 16, hwnd, (HMENU)ID_USEMASKS, g_hInstance, NULL);
             SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
-            wnd = CreateWindowEx(0, "Button", "D&emangle names", 0x50010003, 217, 262, 116, 16, hwnd, (HMENU)ID_DEMANGLE, g_hInstance, NULL);
+            wnd = CreateWindowEx(0, _T("Button"), _T("D&emangle names"), 0x50010003, 217, 262, 116, 16, hwnd, (HMENU)ID_DEMANGLE, g_hInstance, NULL);
             SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
 
-            wnd = CreateWindowEx(0, "Button", "Apply", 0x50012F00, 277, 288, 68, 20, hwnd, (HMENU)ID_APPLY, g_hInstance, NULL);
+            wnd = CreateWindowEx(0, _T("Button"), _T("Apply"), 0x50012F00, 277, 288, 68, 20, hwnd, (HMENU)ID_APPLY, g_hInstance, NULL);
             SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
-            wnd = CreateWindowEx(0, "Button", "Cancel", 0x50012F00, 349, 288, 68, 20, hwnd, (HMENU)ID_CANCEL, g_hInstance, NULL);
+            wnd = CreateWindowEx(0, _T("Button"), _T("Cancel"), 0x50012F00, 349, 288, 68, 20, hwnd, (HMENU)ID_CANCEL, g_hInstance, NULL);
             SendMessage(wnd, WM_SETFONT, (WPARAM)g_hFont, TRUE);
 
             if (g_Config->comments)
@@ -1401,7 +1458,11 @@ void configwnd_create()
     wc.cbWndExtra    = 0;
     wc.hbrBackground = (HBRUSH)(COLOR_3DFACE + 1);
     wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+#if defined(OLLYDBG) || defined(IMMDBG)
     wc.hIcon         = LoadIcon(g_hInstance, OPTWND_ICON_NAME);
+#elif defined(OLLYDBG2)
+    wc.hIcon         = NULL;
+#endif
     wc.hInstance     = g_hInstance;
     wc.lpszMenuName  = NULL;
     wc.style         = CS_PARENTDC | CS_DBLCLKS;
@@ -1516,7 +1577,11 @@ int module_read_file_seg(pmodule_t module)
     return rs;
 }
 
+#if defined(OLLYDBG) || defined(IMMDBG)
 #define READMEM(buf, addr, size, onfailure) if (Readmemory(buf, (ulong)addr, size, MM_RESILENT) < size){ onfailure; return MODULE_MEMORY_READ_FAILURE;}
+#elif defined(OLLYDBG2)
+#define READMEM(buf, addr, size, onfailure) if (Readmemory(buf, (ulong)addr, size, MM_SILENT) < size){ onfailure; return MODULE_MEMORY_READ_FAILURE;}
+#endif
 
 int module_read_mem_seg(pmodule_t module)
 {
@@ -1558,30 +1623,48 @@ ULONG module_manual_base(ULONG initial)
 {
     ULONG rs = initial;
 
-    while (!Getlongxy("Specify region base",
+#if defined(OLLYDBG) || defined(IMMDBG)
+    while (!Getlongxy(_T("Specify region base"),
                       (ulong*)&rs,
                       sizeof(ULONG),
                       0,
                       DIA_HEXONLY,
                       (GetSystemMetrics(SM_CXSCREEN) - MODULE_MANUAL_WIDTH) / 2,
                       (GetSystemMetrics(SM_CYSCREEN) - MODULE_MANUAL_HEIGHT) / 2))
+#elif defined(OLLYDBG2)
+    while (!Getdwordexpression(hwollymain,
+                               _T("Specify region base"),
+                               (ulong*)&rs,
+                               0,
+                               g_nRegionDlgSaveType,
+                               (GetSystemMetrics(SM_CXSCREEN) - MODULE_MANUAL_WIDTH) / 2,
+                               (GetSystemMetrics(SM_CYSCREEN) - MODULE_MANUAL_HEIGHT) / 2,
+                               -1,
+                               0))
+#endif
     {
         if (rs) return rs;
 
-        MessageBox(g_hwndOlly, "Incorrect value", NULL, MB_ICONERROR);
+        MessageBox(g_hwndOlly, _T("Incorrect value"), NULL, MB_ICONERROR);
     }
 
     return 0;
 }
 
 pmodule_t module_init(int* err)
-{   
-    ULONG     cbase,
-              csize;
+{
+    ULONG     cbase;
+#if defined(OLLYDBG) || defined(IMMDBG)
+    ULONG     csize;
+#endif
     t_module* dbg_mod;
     pmodule_t module = (pmodule_t)malloc(sizeof(module_t));
 
+#if defined(OLLYDBG) || defined(IMMDBG)
     Getdisassemblerrange(&cbase, &csize);
+#elif defined(OLLYDBG2)
+    cbase = Getcpudisasmselection();
+#endif
 
     if (cbase)
     {
@@ -1644,27 +1727,43 @@ void module_error(int err)
     switch (err)
     {
         case MODULE_OUT_OF_RANGE:
-            Flash("You are not viewing any module");
+            Flash(_T("You are not viewing any module"));
             break;
 
         case MODULE_BASE_NOT_FOUND:
-            Flash("Failed to obtain module base");
-            Addtolist(0, 1, "Failed to obtain module base");
+            Flash(_T("Failed to obtain module base"));
+#if defined(OLLYDBG) || defined(IMMDBG)
+            Addtolist(0, 1, _T("Failed to obtain module base"));
+#elif defined(OLLYDBG2)
+            Addtolist(0, DRAW_HILITE, _T("Failed to obtain module base"));
+#endif
             break;
 
         case MODULE_FILE_MAPPING_FAILURE:
-            Flash("Failed to create file mapping");
-            Addtolist(0, 1, "Failed to create file mapping");
+            Flash(_T("Failed to create file mapping"));
+#if defined(OLLYDBG) || defined(IMMDBG)
+            Addtolist(0, 1, _T("Failed to create file mapping"));
+#elif defined(OLLYDBG2)
+            Addtolist(0, DRAW_HILITE, _T("Failed to create file mapping"));
+#endif
             break;
 
         case MODULE_FILE_SHARING_VIOLATION:
-            Flash("Failed to obtain file handle");
-            Addtolist(0, 1, "Failed to obtain file handle");
+            Flash(_T("Failed to obtain file handle"));
+#if defined(OLLYDBG) || defined(IMMDBG)
+            Addtolist(0, 1, _T("Failed to obtain file handle"));
+#elif defined(OLLYDBG2)
+            Addtolist(0, DRAW_HILITE, _T("Failed to obtain file handle"));
+#endif
             break;
 
         case MODULE_MEMORY_READ_FAILURE:
-            Flash("Failed to read segments information from memory");
-            Addtolist(0, 1, "Failed to read segments information from memory");
+            Flash(_T("Failed to read segments information from memory"));
+#if defined(OLLYDBG) || defined(IMMDBG)
+            Addtolist(0, 1, _T("Failed to read segments information from memory"));
+#elif defined(OLLYDBG2)
+            Addtolist(0, DRAW_HILITE, _T("Failed to read segments information from memory"));
+#endif
             break;
 
         default:
@@ -1689,8 +1788,15 @@ void mapfile_apply(pmodule_t module, plist_t names)
     pname_t nm,
             nm_last;
     plist_t rmtable;
-    
-    Addtolist(0, 0, "Applying names from map file to module '%s'", module->name);
+#if defined(OLLYDBG2)
+    TCHAR   str_buffer[TEXTLEN];
+#endif
+
+#if defined(OLLYDBG) || defined(IMMDBG)
+    Addtolist(0, 0, _T("Applying names from map file to module '%s'"), module->name);
+#elif defined(OLLYDBG2)
+    Addtolist(0, DRAW_NORMAL, _T("Applying names from map file to module '%s'"), module->name);
+#endif
 
     if (!g_Config->check_collisions)
     {
@@ -1701,12 +1807,16 @@ void mapfile_apply(pmodule_t module, plist_t names)
     {
         if (nm->segment < module->nseg)
         {
+#if defined(OLLYDBG) || defined(IMMDBG)
             if (g_Config->demangle && (result = Demanglename(nm->buffer, NM_LIBRARY, undecorated)))
+#elif defined(OLLYDBG2)
+            if (g_Config->demangle && (result = DemanglenameW(nm->buffer, undecorated, 0)))
+#endif
             {
                 free(nm->buffer);
                 nm->size = (result + 1) * sizeof(TCHAR);
                 nm->buffer = (TCHAR*)malloc(nm->size);
-                strcpy(nm->buffer, undecorated);
+                _tcscpy(nm->buffer, undecorated);
             }
 
             addr = module->base + module->segments[nm->segment] + nm->offset;
@@ -1720,8 +1830,12 @@ void mapfile_apply(pmodule_t module, plist_t names)
                     if (result == FILTER_SKIP)
                     {
                         if (!g_Config->check_collisions &&
+#if defined(OLLYDBG) || defined(IMMDBG)
                             /* Findname for NM_ANYNAME fails everytime, dunno why */
                             (Findname(addr, NM_COMMENT, NULL) || Findname(addr, NM_LABEL, NULL)))
+#elif defined(OLLYDBG2)
+                            (FindnameW(addr, NM_COMMENT, NULL, 0) || FindnameW(addr, NM_LABEL, NULL, 0)))
+#endif
                         {
                             list_add_name(rmtable, NULL, 0, nm->segment, nm->offset);
                         }
@@ -1735,15 +1849,27 @@ void mapfile_apply(pmodule_t module, plist_t names)
             {
                 if (g_Config->check_collisions)
                 {
+#if defined(OLLYDBG) || defined(IMMDBG)
                     if (!Findname(addr, NM_COMMENT, NULL))
+#elif defined(OLLYDBG2)
+                    if (!FindnameW(addr, NM_COMMENT, NULL, 0))
+#endif
                     {
                         /* Quickinsertname returns zero if the name had been inserted and -1 on error */
+#if defined(OLLYDBG) || defined(IMMDBG)
                         applied += Quickinsertname(addr, NM_COMMENT, nm->buffer) + 1;
+#elif defined(OLLYDBG2)
+                        applied += QuickinsertnameW(addr, NM_COMMENT, nm->buffer) + 1;
+#endif
                     }
                 }
                 else
                 {
+#if defined(OLLYDBG) || defined(IMMDBG)
                     applied += Quickinsertname(addr, NM_COMMENT, nm->buffer) + 1;
+#elif defined(OLLYDBG2)
+                    applied += QuickinsertnameW(addr, NM_COMMENT, nm->buffer) + 1;
+#endif
                 }
             }
 
@@ -1752,27 +1878,57 @@ void mapfile_apply(pmodule_t module, plist_t names)
                 if (g_Config->check_collisions)
                 {
                     /* Do not increase "applied" variable again if it has been done in comment insertion block above */
+#if defined(OLLYDBG) || defined(IMMDBG)
                     if (!Findlabel(addr, NULL) && !Quickinsertname(addr, NM_LABEL, nm->buffer) && !g_Config->comments)
+#elif defined(OLLYDBG2)
+                    if (!Findlabel(addr, NULL, 0) && !QuickinsertnameW(addr, NM_LABEL, nm->buffer) && !g_Config->comments)
+#endif
                     {
                         applied++;
                     }
                 }
+#if defined(OLLYDBG) || defined(IMMDBG)
                 else if (!Quickinsertname(addr, NM_LABEL, nm->buffer) && !g_Config->comments)
+#elif defined(OLLYDBG2)
+                else if (!QuickinsertnameW(addr, NM_LABEL, nm->buffer) && !g_Config->comments)
+#endif
                 {
                     applied++;
                 }
             }
         }
 
-        Progress(total * 1000 / names->count, "Inserting names");
+#if defined(OLLYDBG) || defined(IMMDBG)
+        Progress(total * 1000 / names->count, _T("Inserting names"));
+#elif defined(OLLYDBG2)
+        if ((total % 100) == 0)
+            Progress(total * 1000 / names->count, _T("Inserting names - "));
+#endif
     }
 
-    Progress(0, "Merging names");
+#if defined(OLLYDBG) || defined(IMMDBG)
+    Progress(0, _T("Merging names"));
+#elif defined(OLLYDBG2)
+    Progress(0, _T("Merging names - "));
+#endif
+
+#if defined(OLLYDBG) || defined(IMMDBG)
     Mergequicknames();
+#elif defined(OLLYDBG2)
+    Mergequickdata();
+#endif
+
+#if defined(OLLYDBG2)
+    Progress(0, NULL);
+#endif
 
     if (!g_Config->check_collisions)
     {
-        Infoline("Cleaning skipped records");
+#if defined(OLLYDBG) || defined(IMMDBG)
+        Infoline(_T("Cleaning skipped records"));
+#elif defined(OLLYDBG2)
+        Info(_T("Cleaning skipped records"));
+#endif
 
         nm = (pname_t)rmtable->first;
 
@@ -1782,11 +1938,19 @@ void mapfile_apply(pmodule_t module, plist_t names)
 
             if (g_Config->comments)
             {
-                Insertname(addr, NM_COMMENT, "");
+#if defined(OLLYDBG) || defined(IMMDBG)
+                Insertname(addr, NM_COMMENT, _T(""));
+#elif defined(OLLYDBG2)
+                InsertnameW(addr, NM_COMMENT, _T(""));
+#endif
             }
             if (g_Config->labels)
             {
-                Insertname(addr, NM_LABEL, "");
+#if defined(OLLYDBG) || defined(IMMDBG)
+                Insertname(addr, NM_LABEL, _T(""));
+#elif defined(OLLYDBG2)
+                InsertnameW(addr, NM_LABEL, _T(""));
+#endif
             }
 
             nm_last = nm;
@@ -1796,15 +1960,23 @@ void mapfile_apply(pmodule_t module, plist_t names)
         }
     }
 
-    Infoline("Total loaded: %d, Names applied: %d, Names filtered: %d", total, applied, filtered);
-    Addtolist(0, -1, "  Total loaded: %d, Names applied: %d, Names filtered: %d", total, applied, filtered);        
+#if defined(OLLYDBG) || defined(IMMDBG)
+    Infoline(_T("Total loaded: %d, Names applied: %d, Names filtered: %d"), total, applied, filtered);
+    Addtolist(0, -1, _T("  Total loaded: %d, Names applied: %d, Names filtered: %d"), total, applied, filtered);   
+#elif defined(OLLYDBG2)
+    /* OllyDbg 2 doesn't seem to support more than one formatted argument */
+    _stprintf(str_buffer, _T("Total loaded: %d, Names applied: %d, Names filtered: %d"), total, applied, filtered);
+    Info(str_buffer);
+    _stprintf(str_buffer, _T("  Total loaded: %d, Names applied: %d, Names filtered: %d"), total, applied, filtered);
+    Addtolist(0, DRAW_GRAY, str_buffer);
+#endif     
 }
 
 #endif
 
 plist_t mapfile_parse(TCHAR* path)
 {
-    FILE*   file = fopen(path, "r");
+    FILE*   file = _tfopen(path, _T("r"));
     plist_t list = NULL;
     BYTE    segment;
     ULONG   offset,
@@ -1820,11 +1992,11 @@ plist_t mapfile_parse(TCHAR* path)
 
         for (counter = 0; counter < 3; counter++)
         {
-            while (fgets(buffer, MAPBUFLEN, file))
+            while (_fgetts(buffer, MAPBUFLEN, file))
             {
-                buffer[strlen(buffer) - 1] = '\0';
+                buffer[_tcslen(buffer) - 1] = _T('\0');
 
-                if (strstr(buffer, "Address"))
+                if (_tcsstr(buffer, _T("Address")))
                 {
                     if (!list)
                     {
@@ -1833,19 +2005,19 @@ plist_t mapfile_parse(TCHAR* path)
 
                     ntokens = 1;
 
-                    strtok(buffer, " ");
+                    _tcstok(buffer, _T(" "));
 
-                    while (strtok(NULL, " "))
+                    while (_tcstok(NULL, _T(" ")))
                     {
                         ntokens++;
                     }
 
-                    fgets(buffer, MAPBUFLEN, file);
+                    _fgetts(buffer, MAPBUFLEN, file);
                     break;
                 }
-                else if (strstr(buffer, "Static symbols"))
+                else if (_tcsstr(buffer, _T("Static symbols")))
                 {
-                    fgets(buffer, MAPBUFLEN, file);
+                    _fgetts(buffer, MAPBUFLEN, file);
                     break;
                 }
                 else
@@ -1856,19 +2028,19 @@ plist_t mapfile_parse(TCHAR* path)
 
             if (ntokens)
             {
-                while (fgets(buffer, MAPBUFLEN, file))
+                while (_fgetts(buffer, MAPBUFLEN, file))
                 {
-                    if (buffer[0] == ' ')
+                    if (buffer[0] == _T(' '))
                     {
                         buffer++;
-                        buffer[4] = '\0';
-                        segment = (BYTE)strtol(buffer, NULL, 16);
+                        buffer[4] = _T('\0');
+                        segment = (BYTE)_tcstol(buffer, NULL, 16);
                         buffer += 5;
-                        buffer[8] = '\0';
-                        offset = (ULONG)strtol(buffer, NULL, 16);
+                        buffer[8] = _T('\0');
+                        offset = (ULONG)_tcstol(buffer, NULL, 16);
                         buffer += 9;
 
-                        while (*buffer == ' ')
+                        while (*buffer == _T(' '))
                         {
                             buffer++;
                         }
@@ -1881,19 +2053,19 @@ plist_t mapfile_parse(TCHAR* path)
                         */
                         if (ntokens > 4)
                         {
-                            for (len = 0; buffer[len] != '\0'; len++)
+                            for (len = 0; buffer[len] != _T('\0'); len++)
                             {
-                                if (buffer[len] == ' ')
+                                if (buffer[len] == _T(' '))
                                 {
-                                    buffer[len] = '\0';
+                                    buffer[len] = _T('\0');
                                     break;
                                 }
                             }
                         }
                         else
                         {
-                            len = strlen(buffer) - 1;
-                            buffer[len] = '\0';
+                            len = _tcslen(buffer) - 1;
+                            buffer[len] = _T('\0');
                         }
 
                         list_add_name(list, buffer, len, segment, offset);
@@ -1921,20 +2093,28 @@ BOOL mapfile_browse(TCHAR* path)
     TCHAR        fpath[MAX_PATH];
     BOOL         rs = FALSE;
 
-    path[0] = '\0';
+    path[0] = _T('\0');
 
     memset(&ofn, 0, sizeof(OPENFILENAME));
 
     ofn.lStructSize = sizeof(OPENFILENAME);
+#if defined(OLLYDBG) || defined(IMMDBG)
     ofn.hwndOwner = (HWND)Plugingetvalue(VAL_HWMAIN);
+#elif defined(OLLYDBG2)
+    ofn.hwndOwner = hwollymain;
+#endif
     ofn.lpstrFile = path;
     ofn.nMaxFile = MAX_PATH;
-    ofn.lpstrFilter = "Map Files\0*.MAP\0All Files\0*.*\0\0";
-    ofn.lpstrDefExt = "MAP";
-    ofn.lpstrTitle = "Select map file to import";
+    ofn.lpstrFilter = _T("Map Files\0*.MAP\0All Files\0*.*\0\0");
+    ofn.lpstrDefExt = _T("MAP");
+    ofn.lpstrTitle = _T("Select map file to import");
 
-    strcpy(fpath, (TCHAR*)Plugingetvalue(VAL_EXEFILENAME));
-    *(strrchr(fpath, '\\') + 1) = '\0';
+#if defined(OLLYDBG) || defined(IMMDBG)
+    _tcscpy(fpath, (TCHAR*)Plugingetvalue(VAL_EXEFILENAME));
+#elif defined(OLLYDBG2)
+    _tcscpy(fpath, executable);
+#endif
+    *(_tcsrchr(fpath, _T('\\')) + 1) = _T('\0');
 
     ofn.lpstrInitialDir = fpath;
     ofn.Flags = OFN_HIDEREADONLY;
@@ -1944,9 +2124,9 @@ BOOL mapfile_browse(TCHAR* path)
         if (GetFileAttributes(path) == INVALID_FILE_ATTRIBUTES)
         {
 #ifdef IMMDBG
-            Flash("Could not locate file \"%s\"", path);
+            Flash(_T("Could not locate file \"%s\""), path);
 #else
-            Error("Could not locate file \"%s\"", path);
+            Error(_T("Could not locate file \"%s\""), path);
 #endif
         }
         else
@@ -1968,6 +2148,8 @@ BOOL WINAPI DllMain(HINSTANCE hi, DWORD reason, LPVOID reserved)
 
     return TRUE;
 }
+
+#if defined(OLLYDBG) || defined(IMMDBG)
 
 int _export cdecl ODBG_Plugininit(int ollydbgversion, HWND hw, ULONG *features)
 {
@@ -2175,5 +2357,213 @@ void _export cdecl ODBG_Plugindestroy()
     list_free_masks(g_Config->masks);
     free(g_Config);
 }
+
+#elif defined(OLLYDBG2)
+
+extc int __cdecl ODBG2_Pluginquery(int ollydbgversion, ulong *features,
+    wchar_t pluginname[SHORTNAME], wchar_t pluginversion[SHORTNAME])
+{
+    if (ollydbgversion < 201)
+        return 0;
+
+    wcscpy(pluginname, L"mapimp");
+    wcscpy(pluginversion, L"v1.0");
+
+    return PLUGIN_VERSION;
+}
+
+extc int __cdecl ODBG2_Plugininit(void)
+{
+    TCHAR path[MAX_PATH];
+
+    g_Config = config_parse(config_locate(path));
+    g_hInstance = GetModuleHandle(NULL);
+    g_hwndOlly = hwollymain;
+    g_SessionStarted = FALSE;
+    g_Autoloaded = FALSE;
+    g_nMaskDlgSaveType = Plugingetuniquedatatype();
+    g_nRegionDlgSaveType = Plugingetuniquedatatype();
+    Addtolist(0, DRAW_NORMAL, L"mapimp plugin v1.0");
+    Addtolist(0, DRAW_GRAY, L"  tPORt, 2009-2012");
+
+    return 0;
+}
+
+int __cdecl MainMenuFunc(t_table *pt, wchar_t *name, ulong index, int mode);
+
+extc t_menu * __cdecl ODBG2_Pluginmenu(wchar_t *type)
+{
+    static t_menu mainmenu[] = {
+        { L"&Import map",
+        NULL,
+        KK_DIRECT | KK_CTRL | KK_SHIFT | 'I', MainMenuFunc, NULL, 0 },
+        { L"&Options",
+        NULL,
+        KK_DIRECT | KK_CTRL | 'I', MainMenuFunc, NULL, 1 },
+        { L"|&About",
+        NULL,
+        K_NONE, MainMenuFunc, NULL, 3 },
+        { NULL, NULL, K_NONE, NULL, NULL, 0 }
+    };
+
+    if (lstrcmp(type, PWM_MAIN) == 0)
+        return mainmenu;
+
+    return NULL;
+}
+
+extc void __cdecl ODBG2_Pluginreset(void)
+{
+    g_SessionStarted = FALSE;
+}
+
+extc void __cdecl ODBG2_Pluginnotify(int code, void *data, ulong parm1, ulong parm2)
+{
+    plist_t   names;
+    pmodule_t module;
+    TCHAR     path[MAX_PATH];
+    TCHAR*    pos;
+    int       err;
+
+    if (code == PN_STATUS && parm1 == STAT_PAUSED && !g_SessionStarted && !g_Autoloaded)
+    {
+        g_SessionStarted = TRUE;
+
+        wcscpy(path, executable);
+
+        if (pos = wcsrchr(path, L'.'))
+        {
+            wcscpy(pos, L".map");
+        }
+        else
+        {
+            wcscat(path, L".map");
+        }
+
+        if (GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES)
+        {
+            g_Autoloaded = TRUE;
+
+            if ((g_Config->autoimport == AUTOIMPORT_ASK) &&
+                (MessageBox(g_hwndOlly,
+                L"Corresponding map file found. Do you want to import it now?",
+                L"mapimp",
+                MB_YESNO | MB_ICONQUESTION) == IDYES) || (g_Config->autoimport == AUTOIMPORT_ALWAYS))
+            {
+                module = module_init(&err);
+
+                if (!err)
+                {
+                    if (names = mapfile_parse(path))
+                    {
+                        mapfile_apply(module, names);
+                        list_free_names(names);
+
+                        Setcpu(0, 0, 0, 0, 0, CPU_ASMFOCUS);
+                    }
+                    else
+                    {
+                        Flash(L"Failed to open the file");
+                    }
+                }
+                else
+                {
+                    module_error(err);
+                }
+            }
+        }
+    }
+}
+
+int __cdecl MainMenuFunc(t_table *pt, wchar_t *name, ulong index, int mode)
+{
+    plist_t   names;
+    pmodule_t module;
+    TCHAR     path[TEXTLEN];
+    int       err;
+
+    switch (mode)
+    {
+    case MENU_VERIFY:
+        return MENU_NORMAL;
+
+    case MENU_EXECUTE:
+        switch (index)
+        {
+        case ACTION_IMPORT:
+            if (run.status && run.status != STAT_FINISHED && run.status != STAT_CLOSING)
+            {
+                module = module_init(&err);
+
+                if (!err)
+                {
+                    if (mapfile_browse(path))
+                    {
+                        if (names = mapfile_parse(path))
+                        {
+                            mapfile_apply(module, names);
+                            list_free_names(names);
+
+                            Setcpu(0, 0, 0, 0, 0, CPU_ASMFOCUS);
+                        }
+                        else
+                        {
+                            Flash(L"Failed to open the file");
+                        }
+                    }
+                }
+                else
+                {
+                    module_error(err);
+                }
+            }
+            else
+            {
+                Flash(L"Start the debugging session first");
+            }
+            break;
+
+        case ACTION_OPTIONS:
+            Resumeallthreads();
+            configwnd_create();
+            Suspendallthreads();
+            break;
+
+        case ACTION_ABOUT:
+            Resumeallthreads();
+            MessageBox(g_hwndOlly, c_About, L"About mapimp", MB_ICONINFORMATION);
+            Suspendallthreads();
+            break;
+        }
+
+        return MENU_NOREDRAW;
+    }
+
+    return MENU_ABSENT;
+}
+
+extc void __cdecl ODBG2_Pluginsaveudd(t_uddsave *psave, t_module *pmod, int ismainmodule)
+{
+    if (ismainmodule)
+    {
+        Pluginsaverecord(psave, TAG_MAPIMP, sizeof(BOOL), &g_Autoloaded);
+    }
+}
+
+extc void __cdecl ODBG2_Pluginuddrecord(t_module *pmod, int ismainmodule, ulong tag, ulong size, void *data)
+{
+    if (ismainmodule && tag == TAG_MAPIMP)
+    {
+        g_Autoloaded = *(LPBOOL)data;
+    }
+}
+
+extc void __cdecl ODBG2_Plugindestroy(void)
+{
+    list_free_masks(g_Config->masks);
+    free(g_Config);
+}
+
+#endif
 
 #endif
