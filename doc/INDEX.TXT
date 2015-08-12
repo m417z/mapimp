@@ -1,0 +1,6 @@
+README.TXT         Read this file first.
+INDEX.TXT          You are reading it now.
+CHANGELOG.TXT      Exactly what it looks like.
+SAMPLES.TXT        Mask samples and explanations.
+mapimp_idbg.dll    The plugin built for ImmunityDbg 1.85
+mapimp_odbg.dll    The plugin built for OllyDbg 1.10

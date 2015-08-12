@@ -1,0 +1,124 @@
+• "Skip" action
+
+  /[i]sREGEX
+
+Skips the name if REGEX execution results to any match. "i" prefix is for case
+insensitive matching.
+
+[sample]
+name: unknown_libname_2519
+mask: /sunknown_libname_
+applied:
+[/sample]
+
+[sample]
+name: UnKNOwn_libName_1451
+mask: /isunknown_libname_
+applied:
+[/sample]
+
+• "Cut" action
+
+  /[i]cREGEX
+
+Cuts the substring that matched REGEX regular expression. "i" prefix is for
+case insensitive matching.
+
+[sample]
+name: SysUtils::CompareStr(System::AnsiString str1; System::AnsiString str2)
+mask: /cSystem::
+applied: SysUtils::CompareStr(AnsiString str1; AnsiString str2)
+[/sample]
+
+[sample]
+name: SysUtils::UpperCase()
+mask: /icsysutils::
+applied: UpperCase()
+[/sample]
+
+• "Replace" action
+
+  /[i]rREPLACEMENT/REGEX
+
+Replaces the substring that matched REGEX regular expression with REPLACEMENT.
+"i" prefix is for case insensitive matching.
+
+[sample]
+name: str___0__1
+mask: /r_/__
+applied: str_0_1
+[/sample]
+
+The REPLACEMENT can contain percent character to insert matched substring to
+the replacement.
+
+[sample]
+name: System::SomeFunc(int )
+mask: /r__%__/System::.+\(
+applied: __System::SomeFunc(__int )
+[/sample]
+
+There can be only one insert, so if multiple percents present the first one is
+the only valid, others are ignored.
+
+[sample]
+name: System::SomeFunc(int )
+mask: /r__%%%%%%__%%/System::.+\(
+applied: __System::SomeFunc(__int )
+[/sample]
+
+To add a control character to a replacement, cover it with a backslash.
+
+[sample]
+name: System::SomeFunc(int )
+mask: /r\%%\%/System::.+\(
+applied: %System::SomeFunc(%int )
+[/sample]
+
+[sample]
+name: System::SomeFunc(int )
+mask: /r\/%\//System::.+\(
+applied: /System::SomeFunc(/int )
+[/sample]
+
+[sample]
+name: System::SomeFunc(int )
+mask: /r\\%\\/System::.+\(
+applied: \System::SomeFunc(\int )
+[/sample]
+
+• Using mask chaining
+
+The masks are applied to every single name one by one in order of appearance
+in the list. That makes us able to write mask chains that perform complex
+modifications. 
+Let's say I'm debugging MSVC6 application which is using ATL/STL. The method
+declarations are too long, because of template params. So to make it more
+comfortable to see method names I decide to cut those params. 
+
+/r Hey, here is the comment! Empty regexes match nothing, so it works/
+/r Cut basic types first/
+/c(?<=<)[a-z]*(?=>)
+/r Now cut redundant brackets/
+/c<>
+
+Unlike cut action, on each replacement iteration the matching starts from the
+offset equal to the last match ending + replacement length. Nevertheless,
+because of strange behaviour of lookbehind assertions, we avoid using empty
+replacement here.
+
+/r The rest of the stuff/
+/r_/(?<=<).*?(?=>)
+/r We are almost done. Now cut the artificial underscores/
+/r<>/<_>
+
+So, when I try to import the map file again, I get something like
+
+std::basic_filebuf<>::_Init(_iobuf *,std::basic_filebuf<>::_Initfl)
+
+instead of
+
+std::basic_filebuf<char,std::char_traits<char>>::_Init(_iobuf *,
+  std::basic_filebuf<char,std::char_traits<char>>::_Initfl)
+
+which is much more convenient, imo.
