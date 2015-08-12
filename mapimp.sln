@@ -1,9 +1,11 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mapimp", "mapimp.vcproj", "{2DBD6ACA-FD49-4D06-AA30-25BF49ACA659}"
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.40629.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mapimp", "mapimp.vcxproj", "{2DBD6ACA-FD49-4D06-AA30-25BF49ACA659}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "masktest", "masktest.vcproj", "{455D8C7C-C4B6-423B-89B1-1292C164F614}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "masktest", "masktest.vcxproj", "{455D8C7C-C4B6-423B-89B1-1292C164F614}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -16,9 +18,7 @@ Global
 		{2DBD6ACA-FD49-4D06-AA30-25BF49ACA659}.Release|Win32.ActiveCfg = Release|Win32
 		{2DBD6ACA-FD49-4D06-AA30-25BF49ACA659}.Release|Win32.Build.0 = Release|Win32
 		{455D8C7C-C4B6-423B-89B1-1292C164F614}.Debug|Win32.ActiveCfg = Release|Win32
-		{455D8C7C-C4B6-423B-89B1-1292C164F614}.Debug|Win32.Build.0 = Release|Win32
 		{455D8C7C-C4B6-423B-89B1-1292C164F614}.Release|Win32.ActiveCfg = Release|Win32
-		{455D8C7C-C4B6-423B-89B1-1292C164F614}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
